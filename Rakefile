@@ -16,7 +16,7 @@ def name
 end
 
 def version
-  Fog::VERSION
+  "#{Fog::VERSION}.#{Time.now.getutc.strftime "%Y%m%d%H%M%S"}"
 end
 
 def date
@@ -36,7 +36,8 @@ def gem_file
 end
 
 def replace_header(head, header_name)
-  head.sub!(/(\.#{header_name}\s*= ').*'/) { "#{$1}#{send(header_name)}'"}
+  s = header_name == :name ? "fog-maestrodev" : send(header_name)
+  head.sub!(/(\.#{header_name}\s*= ').*'/) { "#{$1}#{s}'"}
 end
 
 #############################################################################
@@ -138,7 +139,7 @@ end
 task :build => :gemspec do
   sh "mkdir -p pkg"
   sh "gem build #{gemspec_file}"
-  sh "mv #{gem_file} pkg"
+  sh "mv *.gem pkg"
 end
 
 task :gemspec => :validate do
