@@ -38,7 +38,7 @@ def gem_file
 end
 
 def replace_header(head, header_name)
-  s = header_name == :name ? "maestrodev-fog" : send(header_name)
+  s = header_name == :name ? "fog-maestrodev" : send(header_name)
   head.sub!(/(\.#{header_name}\s*= ').*'/) { "#{$1}#{s}'"}
 end
 
