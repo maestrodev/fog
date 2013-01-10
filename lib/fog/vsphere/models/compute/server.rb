@@ -24,7 +24,8 @@ module Fog
         attribute :uuid
         attribute :hostname
         attribute :operatingsystem
-        attribute :public_ip_address, :aliases => 'ipaddress'
+        attribute :ipaddress, :aliases => 'public_ip_address'
+        # attribute :public_ip_address, :aliases => 'ipaddress'
         attribute :power_state,   :aliases => 'power'
         attribute :tools_state,   :aliases => 'tools'
         attribute :tools_version
@@ -86,7 +87,11 @@ module Fog
 
         def destroy(options = {})
           requires :instance_uuid
-          stop if ready? # need to turn it off before destroying
+          if ready?
+            # need to turn it off before destroying
+            stop
+            wait_for { !ready? }
+          end
           service.vm_destroy('instance_uuid' => instance_uuid)
         end
 
@@ -124,6 +129,10 @@ module Fog
 
         def ready?
           power_state == "poweredOn"
+        end
+
+        def public_ip_address
+          ipaddress
         end
 
         def tools_installed?

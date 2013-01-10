@@ -18,9 +18,9 @@ module Fog
             raise ArgumentError, "#{required_options.join(', ')} are required" unless options.has_key? param
           end
           # TODO This is ugly and needs to rethink mocks
-          unless ENV['FOG_MOCK']
-            raise ArgumentError, "#{options["datacenter"]} Doesn't Exist!" unless get_datacenter(options["datacenter"])
-            raise ArgumentError, "#{options["template_path"]} Doesn't Exist!" unless get_virtual_machine(options["template_path"], options["datacenter"])
+          unless Fog.mock?
+            raise Fog::Compute::Vsphere::NotFound, "Datacenter #{options["datacenter"]} Doesn't Exist!" unless get_datacenter(options["datacenter"])
+            raise Fog::Compute::Vsphere::NotFound, "Template #{options["template_path"]} Doesn't Exist!" unless get_virtual_machine(options["template_path"], options["datacenter"])
           end
           options
         end
@@ -267,6 +267,15 @@ module Fog
           end
           {
             'vm_ref'   => 'vm-123',
+            'new_vm'   => {
+              "id"=>"vm-123", "name"=>"fog-vm", "uuid"=>"421169de-a984-2d68-f995-939c01904009",
+              "hostname"=>nil, "operatingsystem"=>nil, "ipaddress"=>nil, "power_state"=>"poweredOn",
+              "connection_state"=>"connected", "hypervisor"=>"hy.acme.com", "tools_state"=>"toolsNotRunning",
+              "tools_version"=>"guestToolsUnmanaged", "memory_mb"=>1024, "cpus"=>1,
+              "overall_status"=>"green", "guest_id"=>nil, "mo_ref"=>"vm-49714", "datacenter"=>"Solutions",
+              "cluster"=>"Cluster1", "resource_pool"=>"Resources",
+              "mac_addresses"=>{"Network adapter 1"=>"00:50:56:91:54:ba"},
+              "path"=>"/Datacenters/Solutions/vm", "relative_path"=>""},
             'task_ref' => 'task-1234',
           }
         end
