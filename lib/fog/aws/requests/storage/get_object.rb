@@ -14,6 +14,7 @@ module Fog
         # @option options If-Unmodified-Since [Time] Returns object only if it has not been modified since this time, otherwise returns 412 (Precodition Failed).
         # @option options Range [String] Range of object to download
         # @option options versionId [String] specify a particular version to retrieve
+        # @option options query[Hash] specify additional query string
         #
         # @return [Excon::Response] response:
         #   * body [String]- Contents of object
@@ -34,8 +35,11 @@ module Fog
           end
 
           params = { :headers => {} }
+
+          params[:query] = options.delete('query') || {}
+
           if version_id = options.delete('versionId')
-            params[:query] = {'versionId' => version_id}
+            params[:query] = params[:query].merge({'versionId' => version_id})
           end
           params[:headers].merge!(options)
           if options['If-Modified-Since']
@@ -51,10 +55,10 @@ module Fog
 
           request(params.merge!({
             :expects  => [ 200, 206 ],
-            :host     => "#{bucket_name}.#{@host}",
+            :bucket_name => bucket_name,
+            :object_name => object_name,
             :idempotent => true,
             :method   => 'GET',
-            :path     => CGI.escape(object_name),
           }))
         end
 
@@ -83,7 +87,7 @@ module Fog
             if (object && !object[:delete_marker])
               if options['If-Match'] && options['If-Match'] != object['ETag']
                 response.status = 412
-              elsif options['If-Modified-Since'] && options['If-Modified-Since'] > Time.parse(object['Last-Modified'])
+              elsif options['If-Modified-Since'] && options['If-Modified-Since'] >= Time.parse(object['Last-Modified'])
                 response.status = 304
               elsif options['If-None-Match'] && options['If-None-Match'] == object['ETag']
                 response.status = 304

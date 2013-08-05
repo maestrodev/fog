@@ -13,12 +13,16 @@ module Fog
         # @param [Array<String>] parts Array of etags as Strings for parts
         #
         # @return [Excon::Response]
-        #   * headers [Hash]:
+        #   * body [Hash]: (success)
         #     * Bucket [String] - bucket of new object
-        #     * ETag [String] - etag of new object (will be needed to complete upload)
+        #     * ETag [String] - etag of new object
         #     * Key [String] - key of new object
         #     * Location [String] - location of new object
+        #   * body [Hash]: (failure)
+        #     * Code [String] - Error status code
+        #     * Message [String] - Error description
         #
+        # @note This request could fail and still return +200 OK+, so it's important that you check the response.
         # @see http://docs.amazonwebservices.com/AmazonS3/latest/API/mpUploadComplete.html
         #
         def complete_multipart_upload(bucket_name, object_name, upload_id, parts)
@@ -34,10 +38,10 @@ module Fog
             :body       => data,
             :expects    => 200,
             :headers    => { 'Content-Length' => data.length },
-            :host       => "#{bucket_name}.#{@host}",
+            :bucket_name => bucket_name,
+            :object_name => object_name,
             :method     => 'POST',
             :parser     => Fog::Parsers::Storage::AWS::CompleteMultipartUpload.new,
-            :path       => CGI.escape(object_name),
             :query      => {'uploadId' => upload_id}
           })
         end

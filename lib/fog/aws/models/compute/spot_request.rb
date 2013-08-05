@@ -21,6 +21,7 @@ module Fog
         attribute :availability_zone_group,    :aliases => 'availabilityZoneGroup'
         attribute :product_description,        :aliases => 'productDescription'
 
+        attribute :ebs_optimized,              :aliases => 'LaunchSpecification.EbsOptimized'
         attribute :groups,                     :aliases => 'LaunchSpecification.SecurityGroup'
         attribute :key_name,                   :aliases => 'LaunchSpecification.KeyName'
         attribute :availability_zone,          :aliases => 'LaunchSpecification.Placement.AvailabilityZone'
@@ -94,7 +95,8 @@ module Fog
             'LaunchSpecification.KeyName'                    => key_name,
             'LaunchSpecification.Monitoring.Enabled'         => monitoring,
             'LaunchSpecification.Placement.AvailabilityZone' => availability_zone,
-            'LaunchSpecification.SecurityGroup'              => groups,
+            'LaunchSpecification.SecurityGroupId'            => groups,
+            'LaunchSpecification.EbsOptimized'               => ebs_optimized,
             'LaunchSpecification.UserData'                   => user_data,
             'LaunchSpecification.SubnetId'                   => subnet_id,
             'LaunchSpecification.IamInstanceProfile.Arn'     => @iam_instance_profile_arn,
@@ -103,16 +105,6 @@ module Fog
             'ValidFrom'                                      => valid_from,
             'ValidUntil'                                     => valid_until }
           options.delete_if {|key, value| value.nil?}
-
-          # If subnet is defined then this is a Virtual Private Cloud.
-          # subnet & security group cannot co-exist. Attempting to specify
-          # both subnet and groups will cause an error.  Instead please make
-          # use of Security Group Ids when working in a VPC.
-          if subnet_id
-            options.delete('LaunchSpecification.SecurityGroup')
-          else
-            options.delete('LaunchSpecification.SubnetId')
-          end
 
           data = service.request_spot_instances(image_id, flavor_id, price, options).body
           spot_instance_request = data['spotInstanceRequestSet'].first

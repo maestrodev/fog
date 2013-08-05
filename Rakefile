@@ -48,15 +48,21 @@ end
 
 GEM_NAME = "#{name}"
 task :default => :test
+task :travis  => ['test:travis', 'coveralls_push_workaround']
 
 require "tasks/test_task"
 Fog::Rake::TestTask.new
 
 namespace :test do
+  mock = 'true' || ENV['FOG_MOCK']
+  task :travis do
+      sh("export FOG_MOCK=#{mock} && bundle exec shindont")
+  end
   task :vsphere do
-    [true].each do |mock|
       sh("export FOG_MOCK=#{mock} && bundle exec shindont tests/vsphere")
-    end
+  end
+  task :openvz do
+      sh("export FOG_MOCK=#{mock} && bundle exec shindont tests/openvz")
   end
 end
 
@@ -136,12 +142,15 @@ task :gem_push do
   sh "gem push pkg/#{name}-#{version}.gem"
 end
 
+desc "Build fog-#{version}.gem"
 task :build => :gemspec do
   sh "mkdir -p pkg"
   sh "gem build #{gemspec_file}"
   sh "mv *.gem pkg"
 end
+task :gem => :build
 
+desc "Updates the gemspec and runs 'validate'"
 task :gemspec => :validate do
   # read spec file and split out manifest section
   spec = File.read(gemspec_file)
@@ -157,6 +166,7 @@ task :gemspec => :validate do
   puts "Updated #{gemspec_file}"
 end
 
+desc "Run before pushing out the code"
 task :validate do
   libfiles = Dir['lib/*'] - ["lib/#{name}.rb", "lib/#{name}", "lib/tasks"]
   unless libfiles.empty?
@@ -178,3 +188,12 @@ end
 
 require "tasks/changelog_task"
 Fog::Rake::ChangelogTask.new
+
+task :coveralls_push_workaround do
+  use_coveralls = (Gem::Version.new(RUBY_VERSION) > Gem::Version.new('1.9.2'))
+  if (ENV['COVERAGE'] != 'false') && use_coveralls
+    require 'coveralls/rake/task'
+    Coveralls::RakeTask.new
+    Rake::Task["coveralls:push"].invoke
+  end
+end

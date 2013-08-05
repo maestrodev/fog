@@ -50,7 +50,7 @@ module Fog
           self.class.data.delete(@aws_access_key_id)
         end
 
-        def setup_credientials(options)
+        def setup_credentials(options)
           @aws_access_key_id = options[:aws_access_key_id]
         end
       end
@@ -85,8 +85,8 @@ module Fog
           @host       = options[:host]        || "dynamodb.#{@region}.amazonaws.com"
           @path       = options[:path]        || '/'
           @persistent = options[:persistent]  || false
-          @port       = options[:port]        || '80' #443
-          @scheme     = options[:scheme]      || 'http' #'https'
+          @port       = options[:port]        || '443'
+          @scheme     = options[:scheme]      || 'https'
 
           @connection = Fog::Connection.new("#{@scheme}://#{@host}:#{@port}#{@path}", @persistent, @connection_options)
         end

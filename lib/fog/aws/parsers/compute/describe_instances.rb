@@ -9,7 +9,7 @@ module Fog
             @block_device_mapping = {}
             @network_interface = {}
             @context = []
-            @contexts = ['blockDeviceMapping', 'groupSet', 'iamInstanceProfile', 'instancesSet', 'instanceState', 'networkInterfaceSet', 'placement', 'productCodes', 'stateReason', 'tagSet']
+            @contexts = ['blockDevices', 'blockDeviceMapping', 'groupSet', 'iamInstanceProfile', 'instancesSet', 'instanceState', 'networkInterfaceSet', 'placement', 'productCodes', 'stateReason', 'tagSet']
             @instance = { 'blockDeviceMapping' => [], 'networkInterfaces' => [], 'iamInstanceProfile' => {}, 'instanceState' => {}, 'monitoring' => {}, 'placement' => {}, 'productCodes' => [], 'stateReason' => {}, 'tagSet' => {} }
             @reservation = { 'groupIds' => [], 'groupSet' => [], 'instancesSet' => [] }
             @response = { 'reservationSet' => [] }
@@ -31,10 +31,11 @@ module Fog
               @instance[@context.last][name] = value
             when 'availabilityZone', 'tenancy'
               @instance['placement'][name] = value
-            when 'architecture', 'clientToken', 'dnsName', 'imageId',
-                  'instanceId', 'instanceType', 'ipAddress', 'kernelId',
-                  'keyName', 'platform', 'privateDnsName', 'privateIpAddress', 'ramdiskId',
-                  'reason', 'rootDeviceType'
+            when 'architecture', 'clientToken', 'dnsName', 'hypervisor', 'imageId',
+                  'instanceId', 'instanceType', 'ipAddress', 'kernelId', 'keyName',
+                  'instanceLifecycle', 'platform', 'privateDnsName', 'privateIpAddress', 'ramdiskId',
+                  'reason', 'requesterId', 'rootDeviceType', 
+                  'spotInstanceRequestId', 'virtualizationType'
               @instance[name] = value
             when 'attachTime'
               @block_device_mapping[name] = Time.parse(value)
@@ -81,6 +82,8 @@ module Fog
               when 'tagSet'
                 @instance['tagSet'][@tag['key']] = @tag['value']
                 @tag = {}
+              when 'blockDevices'
+                # Ignore this one (Eucalyptus specific)
               when nil
                 @response['reservationSet'] << @reservation
                 @reservation = { 'groupIds' => [], 'groupSet' => [], 'instancesSet' => [] }
@@ -101,6 +104,17 @@ module Fog
               @instance['monitoring'][name] = (value == 'enabled')
             when 'ebsOptimized'
               @instance['ebsOptimized'] = (value == 'true')
+            when 'sourceDestCheck'
+              if value == 'true'
+                @instance[name] = true
+              else
+                @instance[name] = false
+              end
+            # Eucalyptus passes status in schema non conforming way
+            when 'stateCode'
+              @instance['instanceState']['code'] = value
+            when 'stateName'
+              @instance['instanceState']['name'] = value
             end
           end
 

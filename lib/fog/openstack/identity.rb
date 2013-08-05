@@ -8,7 +8,8 @@ module Fog
       recognizes :openstack_auth_token, :openstack_management_url, :persistent,
                  :openstack_service_type, :openstack_service_name, :openstack_tenant,
                  :openstack_api_key, :openstack_username, :openstack_current_user_id,
-                 :current_user, :current_tenant
+                 :current_user, :current_tenant,
+                 :openstack_endpoint_type
 
       model_path 'fog/openstack/models/identity'
       model       :tenant
@@ -62,7 +63,6 @@ module Fog
 
       class Mock
         attr_reader :auth_token
-        attr_reader :unscoped_token
         attr_reader :auth_token_expiration
         attr_reader :current_user
         attr_reader :current_tenant
@@ -192,6 +192,8 @@ module Fog
           @connection_options = options[:connection_options] || {}
 
           @openstack_current_user_id = options[:openstack_current_user_id]
+          
+          @openstack_endpoint_type = options[:openstack_endpoint_type] || 'adminURL'
 
           @current_user = options[:current_user]
           @current_tenant = options[:current_tenant]
@@ -227,8 +229,6 @@ module Fog
               }.merge!(params[:headers] || {}),
               :host     => @host,
               :path     => "#{@path}/#{params[:path]}"#,
-              # Causes errors for some requests like tenants?limit=1
-              # :query    => ('ignore_awful_caching' << Time.now.to_i.to_s)
             }))
           rescue Excon::Errors::Unauthorized => error
             raise if retried
@@ -263,7 +263,7 @@ module Fog
               :openstack_tenant   => @openstack_tenant,
               :openstack_service_type => @openstack_service_type,
               :openstack_service_name => @openstack_service_name,
-              :openstack_endpoint_type => 'adminURL'
+              :openstack_endpoint_type => @openstack_endpoint_type
             }
 
             credentials = Fog::OpenStack.authenticate_v2(options, @connection_options)

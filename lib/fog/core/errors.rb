@@ -19,6 +19,8 @@ module Fog
     class LoadError < LoadError; end
     
     class TimeoutError< Fog::Errors::Error; end
+    
+    class NotImplemented < Fog::Errors::Error; end
 
     # @return [String] The error message that will be raised, if credentials cannot be found
     def self.missing_credentials
@@ -44,11 +46,15 @@ An alternate file may be used by placing its path in the FOG_RC environment vari
   :clodo_username:
   :go_grid_api_key:
   :go_grid_shared_secret:
+  :google_client_email:
+  :google_key_location:
+  :google_project:
   :google_storage_access_key_id:
   :google_storage_secret_access_key:
-  :hp_account_id:
+  :hp_access_key:
   :hp_secret_key:
   :hp_tenant_id:
+  :hp_avl_zone:
   :linode_api_key:
   :local_root:
   :bare_metal_cloud_password:
@@ -68,6 +74,8 @@ An alternate file may be used by placing its path in the FOG_RC environment vari
   :rackspace_username:
   :rackspace_servicenet:
   :rackspace_cdn_ssl:
+  :riakcs_access_key_id:
+  :riakcs_secret_access_key:
   :stormondemand_username:
   :stormondemand_password:
   :terremark_username:
@@ -80,6 +88,7 @@ An alternate file may be used by placing its path in the FOG_RC environment vari
   :dnsimple_password:
   :dnsmadeeasy_api_key:
   :dnsmadeeasy_secret_key:
+  :dreamhost_api_key:
   :cloudstack_host:
   :cloudstack_api_key:
   :cloudstack_secret_access_key:

@@ -33,13 +33,26 @@ module Fog
             {
               :name    => nic.deviceInfo.label,
               :mac     => nic.macAddress,
-              :network => nic.backing.network.name,
+              :network => nic.backing.respond_to?("network") ? nic.backing.network.name : nic.backing.port.portgroupKey,
               :status  => nic.connectable.status,
               :summary => nic.deviceInfo.summary,
               :type    => nic.class,
+              :key     => nic.key,
             }
           end
 
+        end
+        
+        def get_vm_interface(vm_id, options={})
+          raise ArgumentError, "instance id is a required parameter" unless vm_id
+          if options.is_a? Fog::Compute::Vsphere::Interface
+            options
+          else
+            raise ArgumentError, "Either key or name is a required parameter. options: #{options}" unless options.has_key? :key or options.has_key? :mac or options.has_key? :name
+            list_vm_interfaces(vm_id).find do | nic |
+              (options.has_key? :key and nic[:key]==options[:key].to_i) or (options.has_key? :mac and nic[:mac]==options[:mac]) or (options.has_key? :name and nic[:name]==options[:name])
+            end
+          end
         end
 
       end

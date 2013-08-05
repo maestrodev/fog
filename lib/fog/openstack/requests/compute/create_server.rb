@@ -41,15 +41,44 @@ module Fog
             end
           end
 
+          if options['nics']
+            data['server']['networks'] =
+            Array(options['nics']).map do |nic|
+              {
+                'uuid' => nic['net_id'],
+                'fixed_ip' => nic['v4_fixed_ip'],
+                'port' => nic['port_id']
+              }
+            end
+          end
+
           if options['os:scheduler_hints']
             data['os:scheduler_hints'] = options['os:scheduler_hints']
           end
+
+          if options['block_device_mapping']
+            data['server']['block_device_mapping'] =
+            [options['block_device_mapping']].flatten.map do |mapping|
+              {
+                'volume_size' => mapping[:volume_size],
+                'volume_id' => mapping[:volume_id],
+                'delete_on_termination' => mapping[:delete_on_termination],
+                'device_name' => mapping[:device_name]
+              }
+            end
+          end
+
+          path = if data['server']['block_device_mapping']
+                   'os-volumes_boot.json'
+                 else
+                   'servers.json'
+                 end
 
           request(
             :body     => Fog::JSON.encode(data),
             :expects  => [200, 202],
             :method   => 'POST',
-            :path     => 'servers.json'
+            :path     => path
           )
         end
 
@@ -70,12 +99,10 @@ module Fog
           user_id = if user then
                       user.id
                     else
-                      identity.user.create(:name     => @openstack_username,
-                                           :password => 'password',
-                                           :email =>
-                                             "#{@openstack_username}@example",
-                                           :tenant_id => @openstack_tenant,
-                                           :enabled => true).id
+                       response = identity.create_user(@openstack_username,
+                         'password',
+                         "#{@openstack_username}@example.com")
+                       response.body["user"]["id"]
                     end
 
 

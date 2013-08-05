@@ -105,6 +105,8 @@ module Fog
       collection :vdcs
       model :organization
       collection :organizations
+      model :tag
+      collection :tags
 
       request_path 'fog/vcloud/requests/compute'
       request :clone_vapp
@@ -117,6 +119,7 @@ module Fog
       request :configure_vm_name_description
       request :configure_vm_disks
       request :configure_vm_password
+      request :configure_vm_network
       request :delete_vapp
       request :get_catalog_item
       request :get_customization_options
@@ -134,6 +137,10 @@ module Fog
       request :power_reset
       request :power_shutdown
       request :undeploy
+      request :get_metadata
+      request :delete_metadata
+      request :configure_metadata
+      request :configure_vm_customization_script
 
       class Mock
 
@@ -224,7 +231,7 @@ module Fog
         # header from that call.
         def do_login
           @login_results = login
-          @cookie = @login_results.headers['Set-Cookie']
+          @cookie = @login_results.headers['Set-Cookie'] || @login_results.headers['set-cookie']
         end
 
         def ensure_unparsed(uri)
@@ -300,7 +307,7 @@ module Fog
 
         # Use this to set the Authorization header for login
         def authorization_header
-          "Basic #{Base64.encode64("#{@username}:#{@password}").chomp!}"
+          "Basic #{Base64.encode64("#{@username}:#{@password}").delete("\r\n")}"
         end
 
         # Actually do the request

@@ -18,7 +18,7 @@ module Fog
 
         attribute :vapp_scoped_local_id, :aliases => :VAppScopedLocalId
 
-        attribute :network_connections, :aliases => :NetworkConnectionSection, :squash => :NetworkConnection
+        attribute :network_connections, :aliases => :NetworkConnectionSection#, :squash => :NetworkConnection
         attribute :virtual_hardware, :aliases => :'ovf:VirtualHardwareSection', :squash => :'ovf:Item'
 
         attribute :guest_customization, :aliases => :GuestCustomizationSection
@@ -27,6 +27,20 @@ module Fog
         attribute :tasks, :aliases => :Tasks, :type => :array
 
         has_up :vapp
+        
+        def tags
+          Fog::Vcloud::Compute::Tags.new(:service => service, :href => href + '/metadata')
+        end
+        
+        def customization_script
+          load_unless_loaded!
+          self.guest_customization[:CustomizationScript]
+        end
+        
+        def customization_script=(custom_script)
+          @changed = true
+          @update_custom_script = custom_script
+        end
 
         def computer_name
           load_unless_loaded!
@@ -123,7 +137,14 @@ module Fog
           @update_memory_value = amount
           amount
         end
-
+        def network
+          network_connections[:NetworkConnection] if network_connections
+        end
+        def network=(network_info)
+          @changed = true
+          @update_network = network_info
+          network_info
+        end
         def disks
           disk_mess.map do |dm|
             { :number => dm[:"rasd:AddressOnParent"].to_i, :size => dm[:"rasd:HostResource"][:vcloud_capacity].to_i, :resource => dm[:"rasd:HostResource"], :disk_data => dm }
@@ -184,6 +205,12 @@ module Fog
                 raise RuntimeError, "Can't save cpu, name or memory changes while the VM is on."
               end
             end
+            
+            if @update_custom_script
+              guest_customization[:CustomizationScript] = @update_custom_script.to_s
+              service.configure_vm_customization_script(guest_customization)
+              wait_for { ready? }
+            end
 
             if @update_password
                 guest_customization[:AdminPassword] = @update_password.to_s
@@ -203,6 +230,12 @@ module Fog
               wait_for { ready? }
             end
 
+            if @update_network
+              network_connections[:NetworkConnection][:network] = @update_network[:network_name]
+              network_connections[:NetworkConnection][:IpAddressAllocationMode] = @update_network[:network_mode]
+              service.configure_vm_network(network_connections)
+              wait_for { ready? }
+            end
             if @disk_change == :deleted
               data = disk_mess.delete_if do |vh|
                 vh[:'rasd:ResourceType'] == '17' &&
@@ -248,6 +281,7 @@ module Fog
           @update_password = nil
           @update_cpu_value = nil
           @update_memory_value = nil
+          @update_network = nil
           @name_changed = false
           @description_changed = nil
         end

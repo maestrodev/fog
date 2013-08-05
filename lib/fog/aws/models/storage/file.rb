@@ -163,11 +163,10 @@ module Fog
         def public_url
           requires :directory, :key
           if service.get_object_acl(directory.key, key).body['AccessControlList'].detect {|grant| grant['Grantee']['URI'] == 'http://acs.amazonaws.com/groups/global/AllUsers' && grant['Permission'] == 'READ'}
-            if directory.key.to_s =~ Fog::AWS::COMPLIANT_BUCKET_NAMES
-              "https://#{directory.key}.s3.amazonaws.com/#{Fog::AWS.escape(key)}".gsub('%2F','/')
-            else
-              "https://s3.amazonaws.com/#{directory.key}/#{Fog::AWS.escape(key)}".gsub('%2F','/')
-            end
+            service.request_url(
+              :bucket_name => directory.key,
+              :object_name => key
+            )
           else
             nil
           end
@@ -179,7 +178,7 @@ module Fog
         # 
         # @param [Hash] options  
         # @option options [String] acl sets x-amz-acl HTTP header. Valid values include, private | public-read | public-read-write | authenticated-read | bucket-owner-read | bucket-owner-full-control
-        # @option options [String] cache_controle sets Cache-Control header. For example, 'No-cache'
+        # @option options [String] cache_control sets Cache-Control header. For example, 'No-cache'
         # @option options [String] content_disposition sets Content-Disposition HTTP header. For exampple, 'attachment; filename=testing.txt'
         # @option options [String] content_encoding sets Content-Encoding HTTP header. For example, 'x-gzip'
         # @option options [String] content_md5 sets Content-MD5. For example, '79054025255fb1a26e4bc422aef54eb4'
@@ -223,7 +222,7 @@ module Fog
         # 
         #     required attributes: key
         # 
-        # @param expires [String] number of seconds before url expires
+        # @param expires [String] number of seconds (since 1970-01-01 00:00) before url expires
         # @param options [Hash]
         # @return [String] url
         # 

@@ -8,7 +8,8 @@ module Fog
       recognizes :openstack_auth_token, :openstack_management_url, :persistent,
                  :openstack_service_type, :openstack_service_name, :openstack_tenant,
                  :openstack_api_key, :openstack_username,
-                 :current_user, :current_tenant
+                 :current_user, :current_tenant,
+                 :openstack_endpoint_type
 
       model_path 'fog/openstack/models/volume'
 
@@ -28,6 +29,10 @@ module Fog
       request :list_snapshots
       request :get_snapshot_details
       request :delete_snapshot
+ 
+      request :update_quota
+      request :get_quota
+      request :get_quota_defaults
 
       request :set_tenant
 
@@ -36,7 +41,12 @@ module Fog
           @data ||= Hash.new do |hash, key|
             hash[key] = {
               :users => {},
-              :tenants => {}
+              :tenants => {},
+              :quota => {
+                'gigabytes' => 1000,
+                'volumes'   => 10,
+                'snapshots' => 10
+              }
             }
           end
         end
@@ -114,6 +124,7 @@ module Fog
           @openstack_service_type         = options[:openstack_service_type] || ['volume']
           @openstack_service_name         = options[:openstack_service_name]
 
+          @openstack_endpoint_type        = options[:openstack_endpoint_type] || 'adminURL'
           @connection_options = options[:connection_options] || {}
 
           @current_user = options[:current_user]
@@ -148,8 +159,6 @@ module Fog
               }.merge!(params[:headers] || {}),
               :host     => @host,
               :path     => "#{@path}/#{params[:path]}"#,
-              # Causes errors for some requests like tenants?limit=1
-              # :query    => ('ignore_awful_caching' << Time.now.to_i.to_s)
             }))
           rescue Excon::Errors::Unauthorized => error
             if error.response.body != 'Bad username or password' # token expiration
@@ -185,7 +194,7 @@ module Fog
               :openstack_auth_token => @openstack_auth_token,
               :openstack_service_type => @openstack_service_type,
               :openstack_service_name => @openstack_service_name,
-              :openstack_endpoint_type => 'adminURL'
+              :openstack_endpoint_type => @openstack_endpoint_type
             }
 
             credentials = Fog::OpenStack.authenticate_v2(options, @connection_options)

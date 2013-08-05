@@ -5,7 +5,6 @@ module Fog
 
         require 'fog/aws/parsers/storage/initiate_multipart_upload'
 
-        #
         # Initiate a multipart upload to an S3 bucket
         #
         # @param bucket_name [String] Name of bucket to create object in
@@ -27,15 +26,14 @@ module Fog
         #
         # @see http://docs.amazonwebservices.com/AmazonS3/latest/API/mpUploadInitiate.html
         #
-        
         def initiate_multipart_upload(bucket_name, object_name, options = {})
           request({
             :expects    => 200,
             :headers    => options,
-            :host       => "#{bucket_name}.#{@host}",
+            :bucket_name => bucket_name,
+            :object_name => object_name,
             :method     => 'POST',
             :parser     => Fog::Parsers::Storage::AWS::InitiateMultipartUpload.new,
-            :path       => CGI.escape(object_name),
             :query      => {'uploads' => nil}
           })
         end

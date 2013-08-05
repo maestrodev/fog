@@ -6,10 +6,9 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'fog'
-  s.version           = '1.8.0'
-  s.date              = '2012-12-01'
+  s.version           = '1.14.0'
+  s.date              = '2013-07-19'
   s.rubyforge_project = 'fog'
-
 
   ## Make sure your summary is short. The description may be as long
   ## as you like.
@@ -22,6 +21,7 @@ Gem::Specification.new do |s|
   s.authors  = ["geemus (Wesley Beary)"]
   s.email    = 'geemus@gmail.com'
   s.homepage = 'http://github.com/fog/fog'
+  s.license  = 'MIT'
 
   ## This sections is only necessary if you have C extensions.
   # s.require_paths << 'ext'
@@ -42,13 +42,13 @@ Gem::Specification.new do |s|
   ## List your runtime dependencies here. Runtime dependencies are those
   ## that are needed for an end user to actually USE your code.
   s.add_dependency('builder')
-  s.add_dependency('excon', '~>0.14')
+  s.add_dependency('excon', '~>0.25.0')
   s.add_dependency('formatador', '~>0.2.0')
   s.add_dependency('multi_json', '~>1.0')
   s.add_dependency('mime-types')
-  s.add_dependency('net-scp', '~>1.0.4')
+  s.add_dependency('net-scp', '~>1.1')
   s.add_dependency('net-ssh', '>=2.1.3')
-  s.add_dependency('nokogiri', '~>1.5.0')
+  s.add_dependency('nokogiri', '~>1.5')
   s.add_dependency('ruby-hmac')
 
   ## List your development dependencies here. Development dependencies are
@@ -61,9 +61,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency('rspec', '~>1.3.1')
   s.add_development_dependency('rbovirt', '>=0.0.11')
   s.add_development_dependency('shindo', '~>0.3.4')
-  s.add_development_dependency('virtualbox', '~>0.9.1')
   s.add_development_dependency('fission')
   s.add_development_dependency('pry')
+  s.add_development_dependency('google-api-client', '~>0.6.2')
 #  s.add_development_dependency('ruby-libvirt','~>0.4.0')
 
   s.files = `git ls-files`.split("\n")

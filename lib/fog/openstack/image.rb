@@ -3,6 +3,8 @@ require 'fog/openstack'
 module Fog
   module Image
     class OpenStack < Fog::Service
+      SUPPORTED_VERSIONS = /v1(\.(0|1))*/
+
       requires :openstack_auth_url
       recognizes :openstack_auth_token, :openstack_management_url, :persistent,
                  :openstack_service_type, :openstack_service_name, :openstack_tenant,
@@ -148,8 +150,6 @@ module Fog
               }.merge!(params[:headers] || {}),
               :host     => @host,
               :path     => "#{@path}/#{params[:path]}"#,
-              # Causes errors for some requests like tenants?limit=1
-              # :query    => ('ignore_awful_caching' << Time.now.to_i.to_s)
             }))
           rescue Excon::Errors::Unauthorized => error
             if error.response.body != 'Bad username or password' # token expiration
@@ -206,6 +206,12 @@ module Fog
           @host   = uri.host
           @path   = uri.path
           @path.sub!(/\/$/, '')
+          unless @path.match(SUPPORTED_VERSIONS)
+            @path = "/" + Fog::OpenStack.get_supported_version(SUPPORTED_VERSIONS,
+                                                               uri,
+                                                               @auth_token,
+                                                               @connection_options)
+          end
           @port   = uri.port
           @scheme = uri.scheme
           true

@@ -1,40 +1,68 @@
 require 'fog/core'
+require 'fog/rackspace/mock_data'
+require 'fog/rackspace/service'
+require 'fog/rackspace/errors'
 
 module Fog
   module Rackspace
     extend Fog::Provider
 
+    US_AUTH_ENDPOINT = 'https://identity.api.rackspacecloud.com/v2.0' unless defined? US_AUTH_ENDPOINT
+    UK_AUTH_ENDPOINT = 'https://lon.identity.api.rackspacecloud.com/v2.0' unless defined? UK_AUTH_ENDPOINT
+
     module Errors
       class ServiceError < Fog::Errors::Error
-        attr_reader :response_data, :status_code
+        attr_reader :response_data, :status_code, :transaction_id
 
         def to_s
-          status_code ? "[HTTP #{status_code}] #{super}" : super
+          status = status_code ? "HTTP #{status_code}" : "HTTP <Unknown>"
+          "[#{status} | #{transaction_id}] #{super}"
         end
 
         def self.slurp(error)
           data = nil
           message = nil
           status_code = nil
-          
+
           if error.response
-            status_code = error.response.status            
+            status_code = error.response.status
             unless error.response.body.empty?
-              data = Fog::JSON.decode(error.response.body)
-              message = data.values.first ? data.values.first['message'] : data['message']
+              begin
+                data = Fog::JSON.decode(error.response.body)
+                message = extract_message(data)
+              rescue  => e
+                Fog::Logger.warning("Received exception '#{e}' while decoding>> #{error.response.body}")
+                message = error.response.body
+                data = error.response.body
+              end
             end
           end
-          
+
           new_error = super(error, message)
           new_error.instance_variable_set(:@response_data, data)
-          new_error.instance_variable_set(:@status_code, status_code)          
+          new_error.instance_variable_set(:@status_code, status_code)
+          new_error.set_transaction_id(error, service)
           new_error
+        end
+
+        private
+
+        def set_transaction_id(error, service)
+          return unless service && service.respond_to?(:request_id_header) && error.response
+          @transaction_id = error.response.headers[service.request_id_header]
+        end
+
+        def self.extract_message(data)
+          if data.is_a?(Hash)
+            message = data.values.first['message'] if data.values.first.is_a?(Hash)
+            message ||= data['message']
+          end
+          message || data.inspect
         end
       end
 
       class InternalServerError < ServiceError; end
       class Conflict < ServiceError; end
-      class NotFound < ServiceError; end
       class ServiceUnavailable < ServiceError; end
 
       class BadRequest < ServiceError
@@ -46,7 +74,9 @@ module Fog
           unless new_error.response_data.nil? or new_error.response_data['badRequest'].nil?
             new_error.instance_variable_set(:@validation_errors, new_error.response_data['badRequest']['validationErrors'])
           end
-          new_error
+
+          new_error.instance_variable_set(:@status_code, status_code)
+          new_error.set_transaction_id(error, service)
         end
       end
     end
@@ -62,7 +92,8 @@ module Fog
     service(:databases,        'rackspace/databases',         'Databases')
 
     def self.authenticate(options, connection_options = {})
-      rackspace_auth_url = options[:rackspace_auth_url] || "auth.api.rackspacecloud.com"
+      rackspace_auth_url = options[:rackspace_auth_url]
+      rackspace_auth_url ||= options[:rackspace_endpoint] == Fog::Compute::RackspaceV2::LON_ENDPOINT ? "lon.auth.api.rackspacecloud.com" : "auth.api.rackspacecloud.com"
       url = rackspace_auth_url.match(/^https?:/) ? \
                 rackspace_auth_url : 'https://' + rackspace_auth_url
       uri = URI.parse(url)
@@ -82,6 +113,18 @@ module Fog
       response.headers.reject do |key, value|
         !['X-Server-Management-Url', 'X-Storage-Url', 'X-CDN-Management-Url', 'X-Auth-Token'].include?(key)
       end
+    end
+
+    def self.json_response?(response)
+      return false unless response && response.headers
+      response.headers['Content-Type'] =~ %r{application/json}i ? true : false
+    end
+
+    def self.normalize_url(endpoint)
+      return nil unless endpoint
+      str = endpoint.chomp " "
+      str = str.chomp "/"
+      str.downcase
     end
 
     # CGI.escape, but without special treatment on spaces

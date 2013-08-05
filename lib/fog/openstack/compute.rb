@@ -10,7 +10,8 @@ module Fog
                  :persistent, :openstack_service_type, :openstack_service_name,
                  :openstack_tenant,
                  :openstack_api_key, :openstack_username, :openstack_identity_endpoint,
-                 :current_user, :current_tenant, :openstack_region
+                 :current_user, :current_tenant, :openstack_region,
+                 :openstack_endpoint_type
 
       ## MODELS
       #
@@ -92,12 +93,21 @@ module Fog
       request :create_flavor
       request :delete_flavor
 
+      # Flavor Access
+      request :add_flavor_access
+      request :remove_flavor_access
+      request :list_tenants_with_flavor_access
+
       # Metadata
       request :list_metadata
       request :get_metadata
       request :set_metadata
       request :update_metadata
       request :delete_metadata
+
+      # Metadatam
+      request :delete_meta
+      request :update_meta
 
       # Address
       request :list_addresses
@@ -221,7 +231,8 @@ module Fog
                 'volumes'        => 10,
                 'cores'          => 20,
                 'ram'            => 51200
-              }
+              },
+              :volumes => {}
             }
           end
         end
@@ -294,6 +305,7 @@ module Fog
           @openstack_service_type = options[:openstack_service_type] || ['nova', 'compute']
           @openstack_service_name = options[:openstack_service_name]
           @openstack_identity_service_type = options[:openstack_identity_service_type] || 'identity'
+          @openstack_endpoint_type = options[:openstack_endpoint_type] || 'publicURL'
           @openstack_region      = options[:openstack_region]
 
           @connection_options = options[:connection_options] || {}
@@ -332,7 +344,7 @@ module Fog
               }.merge!(params[:headers] || {}),
               :host     => @host,
               :path     => "#{@path}/#{@tenant_id}/#{params[:path]}",
-              :query    => params[:query] || ('ignore_awful_caching' << Time.now.to_i.to_s)
+              :query    => params[:query]
             }))
           rescue Excon::Errors::Unauthorized => error
             if error.response.body != 'Bad username or password' # token expiration
@@ -351,7 +363,7 @@ module Fog
               end
           end
 
-          unless response.body.empty?
+          if !response.body.empty? and response.get_header('Content-Type') == 'application/json'
             response.body = Fog::JSON.decode(response.body)
           end
 
@@ -371,7 +383,8 @@ module Fog
               :openstack_tenant     => @openstack_tenant,
               :openstack_service_type => @openstack_service_type,
               :openstack_service_name => @openstack_service_name,
-              :openstack_identity_service_type => @openstack_identity_service_type
+              :openstack_identity_service_type => @openstack_identity_service_type,
+              :openstack_endpoint_type => @openstack_endpoint_type
             }
 
             if @openstack_auth_uri.path =~ /\/v2.0\//
@@ -405,9 +418,9 @@ module Fog
           @scheme = uri.scheme
            
           # Not all implementations have identity service in the catalog
-          if @openstack_identity_public_endpoint
+          if @openstack_identity_public_endpoint || @openstack_management_url
             @identity_connection = Fog::Connection.new(
-              @openstack_identity_public_endpoint,
+              @openstack_identity_public_endpoint || @openstack_management_url,
               false, @connection_options)
           end
 

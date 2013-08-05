@@ -44,7 +44,7 @@ module Fog
 
             subset.each_file_this_page {|f| yield f}
             until subset.empty? || subset.length == (subset.limit || 10000)
-              subset = subset.all(:marker => subset.last.key)
+              subset = subset.all('marker' => subset.last.key)
               subset.each_file_this_page {|f| yield f}
             end
 
@@ -77,6 +77,14 @@ module Fog
           if self.directory.cdn_public_url
             # escape the key to cover for special char. in object names
             "#{self.directory.cdn_public_url}/#{Fog::HP.escape(key)}"
+          end
+        end
+
+        def get_cdn_ssl_url(key)
+          requires :directory
+          if self.directory.cdn_public_ssl_url
+            # escape the key to cover for special char. in object names
+            "#{self.directory.cdn_public_ssl_url}/#{Fog::HP.escape(key)}"
           end
         end
 
