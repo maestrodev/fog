@@ -24,8 +24,7 @@ module Fog
         attribute :uuid
         attribute :hostname
         attribute :operatingsystem
-        attribute :ipaddress, :aliases => 'public_ip_address'
-        # attribute :public_ip_address, :aliases => 'ipaddress'
+        attribute :public_ip_address, :aliases => 'ipaddress'
         attribute :power_state,   :aliases => 'power'
         attribute :tools_state,   :aliases => 'tools'
         attribute :tools_version
@@ -141,10 +140,6 @@ module Fog
 
         def ready?
           power_state == "poweredOn"
-        end
-
-        def public_ip_address
-          ipaddress
         end
 
         def tools_installed?
