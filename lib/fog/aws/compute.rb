@@ -26,6 +26,8 @@ module Fog
       collection  :key_pairs
       model       :network_interface
       collection  :network_interfaces
+      model       :route_table
+      collection  :route_tables
       model       :security_group
       collection  :security_groups
       model       :server
@@ -48,6 +50,7 @@ module Fog
       request :associate_address
       request :associate_dhcp_options
       request :attach_network_interface
+      request :associate_route_table
       request :attach_internet_gateway
       request :attach_volume
       request :authorize_security_group_ingress
@@ -58,6 +61,8 @@ module Fog
       request :create_key_pair
       request :create_network_interface
       request :create_placement_group
+      request :create_route
+      request :create_route_table
       request :create_security_group
       request :create_snapshot
       request :create_spot_datafeed_subscription
@@ -73,6 +78,8 @@ module Fog
       request :delete_network_interface
       request :delete_security_group
       request :delete_placement_group
+      request :delete_route
+      request :delete_route_table
       request :delete_snapshot
       request :delete_spot_datafeed_subscription
       request :delete_subnet
@@ -80,6 +87,7 @@ module Fog
       request :delete_volume
       request :delete_vpc
       request :deregister_image
+      request :describe_account_attributes
       request :describe_addresses
       request :describe_availability_zones
       request :describe_dhcp_options
@@ -91,6 +99,7 @@ module Fog
       request :describe_key_pairs
       request :describe_network_interface_attribute
       request :describe_network_interfaces
+      request :describe_route_tables
       request :describe_placement_groups
       request :describe_regions
       request :describe_reserved_instances_offerings
@@ -108,6 +117,7 @@ module Fog
       request :detach_internet_gateway
       request :detach_volume
       request :disassociate_address
+      request :disassociate_route_table
       request :get_console_output
       request :get_password_data
       request :import_key_pair
@@ -192,7 +202,15 @@ module Fog
                       }
                     ],
                     'ownerId'             => owner_id
-                  }
+                  },
+                  'amazon-elb-sg' => {
+                    'groupDescription'   => 'amazon-elb-sg',
+                    'groupName'          => 'amazon-elb-sg',
+                    'groupId'            => 'amazon-elb',
+                    'ownerId'            => 'amazon-elb',
+                    'ipPermissionsEgree' => [],
+                    'ipPermissions'      => [],
+                  },
                 },
                 :network_interfaces => {},
                 :snapshots => {},
@@ -205,7 +223,34 @@ module Fog
                 :subnets => [],
                 :vpcs => [],
                 :dhcp_options => [],
-                :internet_gateways => []
+                :internet_gateways => [],
+                :route_tables => [],
+                :account_attributes => [
+                  {
+                    "values"        => ["5"],
+                    "attributeName" => "vpc-max-security-groups-per-interface"
+                  },
+                  {
+                    "values"        => ["20"],
+                    "attributeName" => "max-instances"
+                  },
+                  {
+                    "values"        => ["EC2", "VPC"],
+                    "attributeName" => "supported-platforms"
+                  },
+                  {
+                    "values"        => ["none"],
+                    "attributeName" => "default-vpc"
+                  },
+                  {
+                    "values"        => ["5"],
+                    "attributeName" => "max-elastic-ips"
+                  },
+                  {
+                    "values"        => ["5"],
+                    "attributeName" => "vpc-max-elastic-ips"
+                  }
+                ]
               }
             end
           end
@@ -254,6 +299,11 @@ module Fog
           end
 
           images
+        end
+
+        def ec2_compatibility_mode(enabled=true)
+          values = enabled ? ["EC2", "VPC"] : ["VPC"]
+          self.data[:account_attributes].detect { |h| h["attributeName"] == "supported-platforms" }["values"] = values
         end
 
         def apply_tag_filters(resources, filters, resource_id_key)

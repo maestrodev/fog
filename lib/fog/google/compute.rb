@@ -19,6 +19,7 @@ module Fog
       request :list_zones
       request :list_global_operations
       request :list_zone_operations
+      request :list_snapshots
 
       request :get_server
       request :get_disk
@@ -27,6 +28,7 @@ module Fog
       request :get_machine_type
       request :get_network
       request :get_zone
+      request :get_snapshot
 
       request :delete_disk
       request :delete_firewall
@@ -55,6 +57,9 @@ module Fog
 
       model :disk
       collection :disks
+
+      model :snapshot
+      collection :snapshots
 
       class Mock
         include Collections
@@ -105,6 +110,18 @@ module Fog
           @client.authorization.fetch_access_token!
           @compute = @client.discovered_api('compute', api_version)
           @default_network = 'default'
+        end
+
+        # TODO: Total hack, create zone and zones model.
+        def zones
+          zones = []
+          self.list_zones.data[:body]["items"].each do |z|
+            if z["status"] == "UP"
+              zones.push z["name"]
+            end
+          end
+
+          return zones
         end
 
         def build_result(api_method, parameters, body_object=nil)

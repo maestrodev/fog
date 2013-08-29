@@ -6,6 +6,10 @@ module Fog
     class Rackspace < Fog::Service
       include Fog::Rackspace::Errors
 
+      class ServiceError < Fog::Rackspace::Errors::ServiceError; end
+      class InternalServerError < Fog::Rackspace::Errors::InternalServerError; end
+      class BadRequest < Fog::Rackspace::Errors::BadRequest; end
+
       requires :rackspace_api_key, :rackspace_username
       recognizes :rackspace_auth_url, :rackspace_servicenet, :persistent
       recognizes :rackspace_auth_token, :rackspace_management_url, :rackspace_compute_v1_url, :rackspace_region
@@ -204,13 +208,13 @@ module Fog
         def request(params, parse_json = true, &block)
           super(params, parse_json, &block)
         rescue Excon::Errors::NotFound => error
-          raise NotFound.slurp(error, region)
+          raise NotFound.slurp(error, self)
         rescue Excon::Errors::BadRequest => error
-          raise BadRequest.slurp error
+          raise BadRequest.slurp(error, self)
         rescue Excon::Errors::InternalServerError => error
-          raise InternalServerError.slurp error
+          raise InternalServerError.slurp(error, self)
         rescue Excon::Errors::HTTPStatusError => error
-          raise ServiceError.slurp error
+          raise ServiceError.slurp(error, self)
         end
 
         def service_net?

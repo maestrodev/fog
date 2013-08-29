@@ -19,7 +19,7 @@ module Fog
           "[#{status} | #{transaction_id}] #{super}"
         end
 
-        def self.slurp(error)
+        def self.slurp(error, service=nil)
           data = nil
           message = nil
           status_code = nil
@@ -45,8 +45,6 @@ module Fog
           new_error
         end
 
-        private
-
         def set_transaction_id(error, service)
           return unless service && service.respond_to?(:request_id_header) && error.response
           @transaction_id = error.response.headers[service.request_id_header]
@@ -69,14 +67,16 @@ module Fog
         #TODO - Need to find a better way to print out these validation errors when they are thrown
         attr_reader :validation_errors
 
-        def self.slurp(error)
+        def self.slurp(error, service=nil)
           new_error = super(error)
           unless new_error.response_data.nil? or new_error.response_data['badRequest'].nil?
             new_error.instance_variable_set(:@validation_errors, new_error.response_data['badRequest']['validationErrors'])
           end
 
+          status_code = error.response ? error.response.status : nil
           new_error.instance_variable_set(:@status_code, status_code)
           new_error.set_transaction_id(error, service)
+          new_error
         end
       end
     end
@@ -130,7 +130,10 @@ module Fog
 
     # CGI.escape, but without special treatment on spaces
     def self.escape(str,extra_exclude_chars = '')
-      str.gsub(/([^a-zA-Z0-9_.-#{extra_exclude_chars}]+)/) do
+      # '-' is a special character inside a regex class so it must be first or last.
+      # Add extra excludes before the final '-' so it always remains trailing, otherwise
+      # an unwanted range is created by mistake.
+      str.gsub(/([^a-zA-Z0-9_.#{extra_exclude_chars}-]+)/) do
         '%' + $1.unpack('H2' * $1.bytesize).join('%').upcase
       end
     end
