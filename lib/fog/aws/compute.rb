@@ -223,7 +223,6 @@ module Fog
                 :subnets => [],
                 :vpcs => [],
                 :dhcp_options => [],
-                :internet_gateways => [],
                 :route_tables => [],
                 :account_attributes => [
                   {
@@ -372,7 +371,7 @@ module Fog
           @region                 = options[:region] ||= 'us-east-1'
           @instrumentor           = options[:instrumentor]
           @instrumentor_name      = options[:instrumentor_name] || 'fog.aws.compute'
-          @version                = options[:version]     ||  '2012-12-01'
+          @version                = options[:version]     ||  '2013-10-01'
 
           if @endpoint = options[:endpoint]
             endpoint = URI.parse(@endpoint)
@@ -437,7 +436,6 @@ module Fog
               :expects    => 200,
               :headers    => { 'Content-Type' => 'application/x-www-form-urlencoded' },
               :idempotent => idempotent,
-              :host       => @host,
               :method     => 'POST',
               :parser     => parser
             })

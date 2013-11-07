@@ -16,6 +16,8 @@ module Fog
       model       :volume
       collection  :volumes
 
+      model       :volume_type
+      collection  :volume_types
 
       request_path 'fog/openstack/requests/volume'
 
@@ -25,11 +27,14 @@ module Fog
       request :get_volume_details
       request :delete_volume
 
+      request :list_volume_types
+      request :get_volume_type_details
+
       request :create_volume_snapshot
       request :list_snapshots
       request :get_snapshot_details
       request :delete_snapshot
- 
+
       request :update_quota
       request :get_quota
       request :get_quota_defaults
@@ -157,7 +162,6 @@ module Fog
                 'Accept' => 'application/json',
                 'X-Auth-Token' => @auth_token
               }.merge!(params[:headers] || {}),
-              :host     => @host,
               :path     => "#{@path}/#{params[:path]}"#,
             }))
           rescue Excon::Errors::Unauthorized => error

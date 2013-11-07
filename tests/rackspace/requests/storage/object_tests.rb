@@ -42,6 +42,17 @@ Shindo.tests('Fog::Storage[:rackspace] | object requests', ["rackspace"]) do
     end
 
     # an object key with no special characters
+    tests("#get_object_http_url('fogobjecttests', 'fog_object','expiration timestamp')").succeeds do
+      pending if Fog.mocking?
+      expires_at = 1344149532 # 2012-08-05 16:52:12 +1000
+      storage    = Fog::Storage::Rackspace.new(:rackspace_temp_url_key => "super_secret")
+      storage.extend RackspaceStorageHelpers
+      storage.override_path('/fake_version/fake_tenant')
+      object_url = storage.get_object_http_url('fogobjecttests', 'fog_object', expires_at)
+      object_url =~ /http:\/\/.*clouddrive.com\/[^\/]+\/[^\/]+\/fogobjecttests\/fog_object\?temp_url_sig=7e69a73092e333095a70b3be826a7350fcbede86&temp_url_expires=1344149532/
+    end
+
+    # an object key with no special characters
     tests("#get_object_https_url('fogobjecttests', 'fog_object','expiration timestamp')").succeeds do
       pending if Fog.mocking?
       expires_at = 1344149532 # 2012-08-05 16:52:12 +1000
@@ -71,7 +82,7 @@ Shindo.tests('Fog::Storage[:rackspace] | object requests', ["rackspace"]) do
       storage.extend RackspaceStorageHelpers
       storage.override_path('/fake_version/fake_tenant')
       object_url = storage.get_object_https_url('fogobjecttests', 'fog-object', expires_at)
-      object_url =~ /https:\/\/.*clouddrive.com\/[^\/]+\/[^\/]+\/fogobjecttests\/fog%2Dobject\?temp_url_sig=a24dd5fc955a57adce7d1b5bc4ec2c7660ab8396&temp_url_expires=1344149532/
+      object_url =~ /https:\/\/.*clouddrive.com\/[^\/]+\/[^\/]+\/fogobjecttests\/fog-object\?temp_url_sig=a24dd5fc955a57adce7d1b5bc4ec2c7660ab8396&temp_url_expires=1344149532/
     end
 
     tests("put_object with block") do

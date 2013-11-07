@@ -11,10 +11,14 @@ module Fog
       model_path 'fog/vsphere/models/compute'
       model :server
       collection :servers
+      model :servertype
+      collection :servertypes
       model :datacenter
       collection :datacenters
       model :interface
       collection :interfaces
+      model :interfacetype
+      collection :interfacetypes
       model :volume
       collection :volumes
       model :template
@@ -33,6 +37,7 @@ module Fog
       collection :customvalues
       model :customfield
       collection :customfields
+      model :scsicontroller
 
       request_path 'fog/vsphere/requests/compute'
       request :current_time
@@ -60,6 +65,7 @@ module Fog
       request :create_vm
       request :list_vm_interfaces
       request :modify_vm_interface
+      request :modify_vm_volume
       request :list_vm_volumes
       request :get_virtual_machine
       request :vm_reconfig_hardware
@@ -67,8 +73,13 @@ module Fog
       request :vm_reconfig_cpus
       request :vm_config_vnc
       request :create_folder
+      request :list_server_types
+      request :get_server_type
+      request :list_interface_types
+      request :get_interface_type
       request :list_vm_customvalues
       request :list_customfields
+      request :get_vm_first_scsi_controller
 
       module Shared
 
@@ -95,8 +106,9 @@ module Fog
           :tools_version => 'guest.toolsVersionStatus',
           :memory_mb => 'config.hardware.memoryMB',
           :cpus   => 'config.hardware.numCPU',
+          :corespersocket   => 'config.hardware.numCoresPerSocket',
           :overall_status => 'overallStatus',
-          :guest_id => 'summary.guest.guestId',
+          :guest_id => 'config.guestId',
         }
 
         def convert_vm_view_to_attr_hash(vms)
@@ -334,8 +346,35 @@ module Fog
           @vsphere_ssl      = options[:vsphere_ssl] || true
           @vsphere_expected_pubkey_hash = options[:vsphere_expected_pubkey_hash]
           @vsphere_must_reauthenticate = false
-
+          @vsphere_is_vcenter = nil
           @connection = nil
+          connect
+          negotiate_revision(options[:vsphere_rev])
+          authenticate
+        end
+
+        def reload
+          connect
+          # Check if the negotiation was ever run
+          if @vsphere_is_vcenter.nil?
+            negotiate
+          end
+          authenticate
+        end
+
+        private
+        def negotiate_revision(revision = nil)
+          # Negotiate the API revision
+          if not revision
+            rev = @connection.serviceContent.about.apiVersion
+            @connection.rev = [ rev, ENV['FOG_VSPHERE_REV'] || '4.1' ].min
+          end
+
+          @vsphere_is_vcenter = @connection.serviceContent.about.apiType == "VirtualCenter"
+          @vsphere_rev = @connection.rev
+        end
+
+        def connect
           # This is a state variable to allow digest validation of the SSL cert
           bad_cert = false
           loop do
@@ -357,20 +396,7 @@ module Fog
           if bad_cert then
             validate_ssl_connection
           end
-
-          # Negotiate the API revision
-          if not options[:vsphere_rev]
-            rev = @connection.serviceContent.about.apiVersion
-            @connection.rev = [ rev, ENV['FOG_VSPHERE_REV'] || '4.1' ].min
-          end
-
-          @vsphere_is_vcenter = @connection.serviceContent.about.apiType == "VirtualCenter"
-          @vsphere_rev = @connection.rev
-
-          authenticate
         end
-
-        private
 
         def authenticate
           begin

@@ -31,6 +31,7 @@ module Fog
       request :get_containers
       request :get_object
       request :get_object_https_url
+      request :get_object_http_url
       request :head_container
       request :head_containers
       request :head_object
@@ -190,10 +191,7 @@ module Fog
 
         def endpoint_uri(service_endpoint_url=nil)
           return @uri if @uri
-
-          @uri = super(@rackspace_storage_url || service_endpoint_url, :rackspace_storage_url)
-          @uri.host = "snet-#{@uri.host}" if service_net?
-          @uri
+          super(@rackspace_storage_url || service_endpoint_url, :rackspace_storage_url)
         end
 
         private

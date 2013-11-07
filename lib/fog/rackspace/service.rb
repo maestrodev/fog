@@ -52,6 +52,10 @@ module Fog
         response
       end
 
+      def service_net?
+        false
+      end
+
       private
 
       def process_response(response)
@@ -79,7 +83,6 @@ module Fog
       def request_params(params)
         params.merge({
           :headers  => headers(params),
-          :host     => endpoint_uri.host,
           :path     => "#{endpoint_uri.path}/#{params[:path]}"
         })
       end
@@ -119,7 +122,7 @@ module Fog
       end
 
       def endpoint_uri_v2
-        @uri = @identity_service.service_catalog.get_endpoint(service_name, region)
+        @uri = @identity_service.service_catalog.get_endpoint(service_name, region, service_net?)
       end
 
       def auth_token
@@ -128,7 +131,12 @@ module Fog
 
       def select_options(keys)
         return nil unless @options && keys
-        @options.select {|k,v| keys.include?(k)}
+        selected = {}
+        keys.each do |k|
+          selected[k] = @options[k]
+        end
+
+        selected
       end
 
     end

@@ -27,8 +27,9 @@ module Fog
           options = {}
           if source_image.nil?
             options['sourceSnapshot'] = source_snapshot
-            options['sizeGb']         = size_gb
           end
+
+          options['sizeGb'] = size_gb
 
           data = service.insert_disk(name, zone_name, source_image, options).body
           data = service.backoff_if_unfound {service.get_disk(name, zone_name).body}
@@ -81,6 +82,29 @@ module Fog
           new_attributes = data.attributes
           merge_attributes(new_attributes)
           self
+        end
+
+        def create_snapshot(snapshot_name, snapshot_description="")
+          requires :name
+          requires :zone_name
+
+          if snap_name.nil? or snap_name.empty?
+            raise ArgumentError, 'Invalid snapshot name'
+          end
+
+          options = {
+            'name'        => snapshot_name,
+            'description' => snapshot_description,
+          }
+
+          service.insert_snapshot(name, self.zone, service.project, options)
+          data = service.backoff_if_unfound {
+            service.get_snapshot(snapshot_name, service.project).body
+          }
+          service.snapshots.merge_attributes(data)
+
+          # Try to return the representation of the snapshot we created
+          service.snapshots.get(snapshot_name)
         end
 
         RUNNING_STATE = "READY"

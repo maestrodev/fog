@@ -62,10 +62,13 @@ module Fog
       class InternalServerError < ServiceError; end
       class Conflict < ServiceError; end
       class ServiceUnavailable < ServiceError; end
-
+      class MethodNotAllowed < ServiceError; end
       class BadRequest < ServiceError
-        #TODO - Need to find a better way to print out these validation errors when they are thrown
         attr_reader :validation_errors
+
+        def to_s
+          "#{super} - #{validation_errors}"
+        end
 
         def self.slurp(error, service=nil)
           new_error = super(error)
@@ -92,6 +95,7 @@ module Fog
     service(:identity,         'rackspace/identity',          'Identity')
     service(:databases,        'rackspace/databases',         'Databases')
     service(:monitoring,       'rackspace/monitoring',        'Monitoring')
+    service(:queues,           'rackspace/queues',            'Queues')
 
     def self.authenticate(options, connection_options = {})
       rackspace_auth_url = options[:rackspace_auth_url]
@@ -108,7 +112,6 @@ module Fog
           'X-Auth-Key'  => @rackspace_api_key,
           'X-Auth-User' => @rackspace_username
         },
-        :host     => uri.host,
         :method   => 'GET',
         :path     =>  (uri.path and not uri.path.empty?) ? uri.path : 'v1.0'
       })
