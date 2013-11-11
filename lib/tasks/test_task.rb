@@ -26,7 +26,7 @@ module Fog
         threads = []
         Thread.main[:results] = []
         Fog.providers.each do |key, value|
-          next if key == "hp"
+          next if key == :hp
           threads << Thread.new do
             Thread.main[:results] << {
               :provider => value,
