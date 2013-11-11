@@ -56,7 +56,7 @@ Fog::Rake::TestTask.new
 namespace :test do
   mock = 'true' || ENV['FOG_MOCK']
   task :travis do
-      sh("export FOG_MOCK=#{mock} && bundle exec shindont -hp")
+      sh("export FOG_MOCK=#{mock} && bundle exec shindont")
   end
   task :vsphere do
       sh("export FOG_MOCK=#{mock} && bundle exec shindont tests/vsphere")
