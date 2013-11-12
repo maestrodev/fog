@@ -60,6 +60,51 @@ module Fog
         end
 
       end
+
+      class Mock
+
+        def list_resource_record_sets(zone_id, options = {})
+          maxitems = [options[:max_items]||100,100].min
+
+          zone = self.data[:zones][zone_id]
+          if options[:type]
+            records = zone[:records][options[:type]].values
+          else
+            records = zone[:records].values.first.values
+          end
+
+          if options[:name]
+            name = options[:name].gsub(zone[:name],"")
+            records = records.select{|r| r[:name].gsub(zone[:name],"") >= name }
+          end
+
+          next_records = records[maxitems]
+          records      = records[0, maxitems]
+          truncated    = !next_records.nil?
+
+          response = Excon::Response.new
+          response.status = 200
+          response.body = {
+            'ResourceRecordSets' => records.map do |r|
+              {
+                'ResourceRecords' => r[:resource_records],
+                'Name' => r[:name],
+                'Type' => r[:type],
+                'TTL' => r[:ttl]
+              }
+            end,
+            'MaxItems' => maxitems.to_s,
+            'IsTruncated' => truncated.to_s
+          }
+
+          if truncated
+            response.body['NextMarker'] = next_records[:id]
+          end
+
+          response
+        end
+
+      end
     end
   end
 end
