@@ -66,39 +66,62 @@ module Fog
         def list_resource_record_sets(zone_id, options = {})
           maxitems = [options[:max_items]||100,100].min
 
+          response = Excon::Response.new
+
           zone = self.data[:zones][zone_id]
+          if zone.nil?
+            response.status = 404
+            response.body = "<?xml version=\"1.0\"?>\n<ErrorResponse xmlns=\"https://route53.amazonaws.com/doc/2012-02-29/\"><Error><Type>Sender</Type><Code>NoSuchHostedZone</Code><Message>No hosted zone found with ID: #{zone_id}</Message></Error><RequestId>#{Fog::AWS::Mock.request_id}</RequestId></ErrorResponse>"
+            raise(Excon::Errors.status_error({:expects => 200}, response))
+          end
+
           if options[:type]
             records = zone[:records][options[:type]].values
           else
-            records = zone[:records].values.first.values
+            records = zone[:records].values.map{|r| r.values}.flatten
           end
+
+          # sort for pagination
+          records.sort! { |a,b| a[:name].gsub(zone[:name],"") <=> b[:name].gsub(zone[:name],"") }
 
           if options[:name]
             name = options[:name].gsub(zone[:name],"")
             records = records.select{|r| r[:name].gsub(zone[:name],"") >= name }
+            require 'pp'
           end
 
-          next_records = records[maxitems]
+          next_record  = records[maxitems]
           records      = records[0, maxitems]
-          truncated    = !next_records.nil?
+          truncated    = !next_record.nil?
 
-          response = Excon::Response.new
           response.status = 200
           response.body = {
             'ResourceRecordSets' => records.map do |r|
+              if r[:alias_target]
+                record = {
+                  'AliasTarget' => {
+                    'HostedZoneId' => r[:alias_target][:hosted_zone_id],
+                    'DNSName' => r[:alias_target][:dns_name]
+                  }
+                }
+              else
+                record = {
+                  'TTL' => r[:ttl]
+                }
+              end
               {
                 'ResourceRecords' => r[:resource_records],
                 'Name' => r[:name],
-                'Type' => r[:type],
-                'TTL' => r[:ttl]
-              }
+                'Type' => r[:type]
+              }.merge(record)
             end,
-            'MaxItems' => maxitems.to_s,
-            'IsTruncated' => truncated.to_s
+            'MaxItems' => maxitems,
+            'IsTruncated' => truncated
           }
 
           if truncated
-            response.body['NextMarker'] = next_records[:id]
+            response.body['NextRecordName'] = next_record[:name]
+            response.body['NextRecordType'] = next_record[:type]
           end
 
           response
