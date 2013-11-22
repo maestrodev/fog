@@ -1,5 +1,7 @@
 Shindo.tests("Fog::Compute[:google] | server model", ['google']) do
 
+  model_tests(Fog::Compute[:google].disks, {:name => 'fogservername', :zone_name => 'us-central1-a', :machine_type => 'n1-standard-1'})
+
   tests('servers') do
     @instance = nil
     test('#bootstrap') do
@@ -13,6 +15,7 @@ Shindo.tests("Fog::Compute[:google] | server model", ['google']) do
     end
 
     test('#ssh') do
+      pending if Fog.mocking?
       @instance.ssh("uname") == "Linux"
     end
 
