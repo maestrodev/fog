@@ -2,24 +2,27 @@ module Fog
   module Compute
     class Google
 
-      module Shared
-        private
+      class Mock
+        include Shared
 
-        def handle_disks(options)
+        def handle_disks(options, zone_name)
           disks = []
+          i = 0
           options.delete('disks').each do |disk|
-            if disk.is_a? Disk
-              disks << disk.get_object
-            else
-              disks << disk
-            end
+            disk = Disk.new(disk) unless disk.is_a? Disk
+            disks << {
+              "kind"=>"compute#attachedDisk",
+              "index"=>i,
+              "type"=>"PERSISTENT",
+              "mode"=>"READ_WRITE",
+              "source"=>"https://www.googleapis.com/compute/#{api_version}/projects/#{@project}/zones/#{zone_name}/disks/#{disk.name}",
+              "deviceName"=>disk.name,
+              "boot"=>true
+            }
+            i+=1
           end
           disks
         end
-      end
-
-      class Mock
-        include Shared
 
         def insert_server(server_name, zone_name, options={}, *deprecated_args)
 
@@ -61,7 +64,7 @@ module Fog
                 ]
               }
             ],
-            "disks" => options['disks'] ? handle_disks(options) : [
+            "disks" => options['disks'] ? handle_disks(options, zone_name) : [
               {
                 "kind" => "compute#attachedDisk",
                 "index" => 0,
@@ -102,6 +105,18 @@ module Fog
 
       class Real
         include Shared
+
+        def handle_disks(options)
+          disks = []
+          options.delete('disks').each do |disk|
+            if disk.is_a? Disk
+              disks << disk.get_object
+            else
+              disks << disk
+            end
+          end
+          disks
+        end
 
         def format_metadata(metadata)
           { "items" => metadata.map {|k,v| {"key" => k, "value" => v}} }
