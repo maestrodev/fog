@@ -16,7 +16,7 @@ module Fog
               "type"=>"PERSISTENT",
               "mode"=>"READ_WRITE",
               "source"=>"https://www.googleapis.com/compute/#{api_version}/projects/#{@project}/zones/#{zone_name}/disks/#{disk.name}",
-              "deviceName"=>disk.name,
+              "deviceName"=>"persistent-disk-#{i}",
               "boot"=>true
             }
             i+=1
@@ -46,7 +46,7 @@ module Fog
             "name" => server_name,
             "tags" => { "fingerprint" => "42WmSpB8rSM=" },
             "machineType" => "https://www.googleapis.com/compute/#{api_version}/projects/#{@project}/zones/#{zone_name}/machineTypes/#{options['machineType']}",
-            "image" => "https://www.googleapis.com/compute/#{api_version}/projects/centos-cloud/global/images/#{options['image']}",
+            "image" => "https://www.googleapis.com/compute/#{api_version}/projects/#{image_project}/global/images/#{options['image']}",
             "kernel" => "https://www.googleapis.com/compute/#{api_version}/projects/google/global/kernels/gce-v20130813",
             "canIpForward" => false,
             "networkInterfaces" => [

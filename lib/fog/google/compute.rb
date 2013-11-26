@@ -215,6 +215,21 @@ module Fog
                       "source" => ""
                     },
                     "status" => "READY"
+                  },
+                  "debian-7-wheezy-v20131014" => {
+                    "kind" => "compute#image",
+                    "selfLink" => "https://www.googleapis.com/compute/#{api_version}/projects/debian-cloud/global/images/debian-7-wheezy-v20131014",
+                    "id" => "4213305957435180899",
+                    "creationTimestamp" => "2013-09-04T13:24:30.479-07:00",
+                    "name" => "debian-7-wheezy-v20131014",
+                    "description" => "Debian GNU/Linux 7.1 (wheezy) built on 2013-10-14",
+                    "sourceType" => "RAW",
+                    "preferredKernel" => "https://www.googleapis.com/compute/#{api_version}/projects/google/global/kernels/gce-v20130813",
+                    "rawDisk" => {
+                      "containerType" => "TAR",
+                      "source" => ""
+                    },
+                    "status" => "READY"
                   }
                 }
               }
