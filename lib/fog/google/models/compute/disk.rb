@@ -73,7 +73,6 @@ module Fog
 
         def ready?
           data = service.get_disk(self.name, self.zone_name).body
-          data['zone_name'] = self.zone_name
           self.merge_attributes(data)
           self.status == RUNNING_STATE
         end
