@@ -9,9 +9,12 @@ module Fog
           image_project = nil
           unless image_name.nil?
             ([ @project ] + Fog::Compute::Google::Images::GLOBAL_PROJECTS).each do |project|
-              image_project = project
-              break if data(project)[:images][options['image']]
+              if data(project)[:images][image_name]
+                image_project = project
+                break;
+              end
             end
+            raise ArgumentError.new("Invalid image specified: #{image_name}") unless image_project
             get_image(image_name, image_project) # ok if image exists, will fail otherwise
           end
           get_zone(zone_name)
@@ -61,7 +64,7 @@ module Fog
 
           if image_name
             image = images.get(image_name)
-            raise ArgumentError.new('Invalid image specified') unless image
+            raise ArgumentError.new("Invalid image specified: #{image_name}") unless image
             @image_url = @api_url + image.resource_url
             parameters['sourceImage'] = @image_url
           end
