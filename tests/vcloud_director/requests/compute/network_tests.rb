@@ -7,7 +7,7 @@ Shindo.tests('Compute::VcloudDirector | network requests', ['vclouddirector']) d
     :id => String,
     :description => Fog::Nullable::String,
     :is_inherited => Fog::Boolean,
-    :gateway => String,
+    :gateway => Fog::Nullable::String,
     :netmask => String,
     :dns1 => Fog::Nullable::String,
     :dns2 => Fog::Nullable::String,
@@ -20,6 +20,10 @@ Shindo.tests('Compute::VcloudDirector | network requests', ['vclouddirector']) d
 
   @service = Fog::Compute::VcloudDirector.new
   @org = VcloudDirector::Compute::Helper.current_org(@service)
+
+  tests('Create network in non-existent vDC').raises(Fog::Compute::VcloudDirector::Forbidden) do
+    @service.post_create_org_vdc_network('00000000-0000-0000-0000-000000000000', 'bob')
+  end
 
   tests('#get_network').data_matches_schema(GET_NETWORK_FORMAT) do
     link = @org[:Link].detect do |l|
