@@ -18,14 +18,22 @@ module Fog
         attribute :disks, :aliases => 'disks'
         attribute :metadata
         attribute :tags, :squash => 'items'
+        attribute :self_link, :aliases => 'selfLink'
 
         def image_name=(args)
           Fog::Logger.deprecation("image_name= is no longer used [light_black](#{caller.first})[/]")
         end
+
         def image_name
-          Fog::Logger.deprecation("image_name is deprecated, use source_image from boot disk [light_black](#{caller.first})[/]")
-          disks.first.source_image
+          boot_disk = disks.first
+          unless boot_disk.is_a?(Disk)
+            source = boot_disk['source']
+            match = source.match(%r{/zones/(.*)/disks/(.*)$})
+            boot_disk = service.disks.get match[2], match[1]
+          end
+          boot_disk.source_image.nil? ? nil : boot_disk.source_image
         end
+
         def kernel=(args)
           Fog::Logger.deprecation("kernel= is no longer used [light_black](#{caller.first})[/]")
         end

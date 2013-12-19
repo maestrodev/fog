@@ -84,7 +84,11 @@ module Fog
           response.body = body
           if response.body and response.body["error"]
             response.status = response.body["error"]["code"]
-            msg = response.body["error"]["errors"].map{|error| error["message"]}.join(", ")
+            if response.body["error"]["errors"]
+              msg = response.body["error"]["errors"].map{|error| error["message"]}.join(", ")
+            else
+              msg = "Error [#{response.body["error"]["code"]}]: #{response.body["error"]["message"] || "GCE didn't return an error message"}"
+            end
             case response.status
             when 404
               raise Fog::Errors::NotFound.new(msg)
@@ -301,8 +305,11 @@ module Fog
                       {
                         "kind" => "compute#attachedDisk",
                         "index" => 0,
-                        "type" => "SCRATCH",
-                        "mode" => "READ_WRITE"
+                        "type" => "PERSISTENT",
+                        "mode" => "READ_WRITE",
+                        "source" => "https://www.googleapis.com/compute/#{api_version}/projects/#{key}/zones/us-central1-a/disks/fog-1",
+                        "deviceName" => "persistent-disk-0",
+                        "boot" => true
                       }
                     ],
                     "metadata" => {
@@ -777,7 +784,30 @@ module Fog
                   }
                 end,
                 :images => {},
-                :disks => {},
+                :disks => {
+                  "fog-1" => {
+                    "kind" => "compute#disk",
+                    "id" => "3338131294770784461",
+                    "creationTimestamp" => "2013-12-18T19:47:10.583-08:00",
+                    "zone" => "https://www.googleapis.com/compute/#{api_version}/projects/#{key}/zones/us-central1-a",
+                    "status" => "READY",
+                    "name" => "fog-1",
+                    "sizeGb" => "10",
+                    "selfLink" => "https://www.googleapis.com/compute/#{api_version}/projects/#{key}/zones/us-central1-a/disks/fog-1",
+                    "sourceImage" => "https://www.googleapis.com/compute/#{api_version}/projects/debian-cloud/global/images/debian-7-wheezy-v20131120",
+                    "sourceImageId" => "17312518942796567788"
+                  },
+                  "fog-2" => {
+                    "kind" => "compute#disk",
+                    "id" => "3338131294770784462",
+                    "creationTimestamp" => "2013-12-18T19:47:10.583-08:00",
+                    "zone" => "https://www.googleapis.com/compute/#{api_version}/projects/#{key}/zones/us-central1-a",
+                    "status" => "READY",
+                    "name" => "fog-2",
+                    "sizeGb" => "10",
+                    "selfLink" => "https://www.googleapis.com/compute/#{api_version}/projects/#{key}/zones/us-central1-a/disks/fog-1"
+                  }
+                },
                 :operations => {}
               }
             end

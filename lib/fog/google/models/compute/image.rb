@@ -8,7 +8,9 @@ module Fog
 
         identity :name
 
+        attribute :id
         attribute :kind
+        attribute :self_link, :aliases => 'selfLink'
         attribute :creation_timestamp, :aliases => 'creationTimestamp'
         attribute :description
 

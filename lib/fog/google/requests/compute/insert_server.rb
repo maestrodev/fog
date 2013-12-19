@@ -29,6 +29,10 @@ module Fog
           # check that zone exists
           get_zone(zone_name)
 
+          if options['disks'].nil? or options['disks'].empty?
+            raise ArgumentError.new "Empty value for field 'disks'. Boot disk must be specified"
+          end
+
           id = Fog::Mock.random_numbers(19).to_s
           self.data[:servers][server_name] = {
             "kind" => "compute#instance",
@@ -55,14 +59,7 @@ module Fog
                 ]
               }
             ],
-            "disks" => options['disks'] ? handle_disks(options, zone_name) : [
-              {
-                "kind" => "compute#attachedDisk",
-                "index" => 0,
-                "type" => "SCRATCH",
-                "mode" => "READ_WRITE"
-              }
-            ],
+            "disks" => handle_disks(options, zone_name),
             "metadata" => {
               "kind" => "compute#metadata",
               "fingerprint" => "5_hasd_gC3E=",

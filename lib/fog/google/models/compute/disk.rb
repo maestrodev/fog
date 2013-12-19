@@ -63,8 +63,9 @@ module Fog
             'boot' => boot,
             'source' => self_link,
             'mode' => mode,
-            'deviceName' => device_name
-          }.select { |k, v| v.respond_to?(:empty?) ? !v.empty? : !v.nil? }
+            'deviceName' => device_name,
+            'type' => 'PERSISTENT'
+          }.select { |k, v| !v.nil? }
         end
 
         def get_as_boot_disk(writable=true)
