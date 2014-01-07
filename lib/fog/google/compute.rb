@@ -93,7 +93,7 @@ module Fog
             when 404
               raise Fog::Errors::NotFound.new(msg)
             else
-              raise Fog::Errors::Error.new(msg)
+              raise Fog::Errors::Error.new("Google returned [#{response.status}] #{msg}")
             end
           else
             response.status = status
