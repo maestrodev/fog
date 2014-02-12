@@ -847,8 +847,9 @@ module Fog
           # NOTE: loaded here to avoid requiring this as a core Fog dependency
           begin
             require 'google/api_client'
-          rescue LoadError
+          rescue LoadError => e
             Fog::Logger.warning("Please install the google-api-client gem before using this provider.")
+            throw e
           end
           key = ::Google::APIClient::KeyUtils.load_from_pkcs12(File.expand_path(options[:google_key_location]), 'notasecret')
 
