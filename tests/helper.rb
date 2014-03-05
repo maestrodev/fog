@@ -1,6 +1,6 @@
 require 'simplecov'
 
-if ENV['COVERAGE'] != 'false' && RUBY_VERSION != "1.9.2"
+if ENV['COVERAGE'] == 'true' && RUBY_VERSION != "1.9.2"
   require 'coveralls'
   SimpleCov.command_name "shindo:#{Process.pid.to_s}"
   SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
@@ -38,6 +38,12 @@ all_providers = all_providers - ["libvirt", "vmfusion", "openvz"]
 available_providers = Fog.available_providers.map {|provider| provider.downcase}
 
 unavailable_providers = all_providers - available_providers
+
+if !ENV['PROVIDER'].nil? && unavailable_providers.include?(ENV['PROVIDER'])
+  Formatador.display_line("[red]Requested provider #{ENV['PROVIDER']} is not available.[/]" + 
+                          "[red]Check if .fog file has correct configuration (see '#{Fog.credentials_path}')[/]")
+  exit(0)
+end
 
 for provider in unavailable_providers
   Formatador.display_line("[yellow]Skipping tests for [bold]#{provider}[/] [yellow]due to lacking credentials (add some to '#{Fog.credentials_path}' to run them)[/]")

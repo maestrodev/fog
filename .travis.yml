@@ -9,6 +9,7 @@ rvm:
   - 1.9.2
   - 1.9.3
   - 2.0.0
+  - 2.1.0
   - jruby-18mode
   - jruby-19mode
   - jruby-head
@@ -16,6 +17,10 @@ rvm:
 script: bundle exec rake travis
 
 matrix:
+  include:
+    - rvm: 2.1.0
+      gemfile: Gemfile
+      env: COVERAGE=true
   exclude:
     - rvm: 1.8.7
       gemfile: Gemfile
@@ -24,6 +29,8 @@ matrix:
     - rvm: 1.9.3
       gemfile: Gemfile.1.8.7
     - rvm: 2.0.0
+      gemfile: Gemfile.1.8.7
+    - rvm: 2.1.0
       gemfile: Gemfile.1.8.7
     - rvm: jruby-18mode
       gemfile: Gemfile
@@ -47,3 +54,6 @@ notifications:
     on_success: always
     on_failure: always
     use_notice: false
+
+before_install:
+  - gem update --system #  todo: workaround for https://github.com/rubygems/rubygems/pull/763

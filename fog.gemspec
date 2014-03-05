@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'fog'
-  s.version           = '1.19.0'
-  s.date              = '2013-12-19'
+  s.version           = '1.20.0'
+  s.date              = '2014-02-07'
   s.rubyforge_project = 'fog'
 
   ## Make sure your summary is short. The description may be as long
@@ -48,8 +48,7 @@ Gem::Specification.new do |s|
   s.add_dependency('mime-types')
   s.add_dependency('net-scp', '~>1.1')
   s.add_dependency('net-ssh', '>=2.1.3')
-  s.add_dependency('nokogiri', '~>1.5')
-  s.add_dependency('ruby-hmac')
+  s.add_dependency('nokogiri', '>=1.5.11')
 
   ## List your development dependencies here. Development dependencies are
   ## those that are only needed during development
@@ -58,7 +57,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency('rbvmomi')
   s.add_development_dependency('yard')
   s.add_development_dependency('thor')
-  s.add_development_dependency('rspec', '~>1.3.1')
   s.add_development_dependency('rbovirt', '>=0.0.11')
   s.add_development_dependency('shindo', '~>0.3.4')
   s.add_development_dependency('fission')

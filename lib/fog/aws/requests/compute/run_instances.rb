@@ -36,7 +36,7 @@ module Fog
         #   * 'SecurityGroupId'<~Array> or <~String> - id's of security group(s) for instances, use this or SecurityGroup
         #   * 'InstanceInitiatedShutdownBehaviour'<~String> - specifies whether volumes are stopped or terminated when instance is shutdown, in [stop, terminate]
         #   * 'InstanceType'<~String> - Type of instance to boot. Valid options
-        #     in ['t1.micro', 'm1.small', 'm1.large', 'm1.xlarge', 'c1.medium', 'c1.xlarge', 'm2.xlarge', m2.2xlarge', 'm2.4xlarge', 'cc1.4xlarge', 'cc2.8xlarge', 'cg1.4xlarge']
+        #     in ['t1.micro', 'm1.small', 'm1.medium', 'm1.large', 'm1.xlarge', 'c1.medium', 'c1.xlarge', 'c3.large', 'c3.xlarge', 'c3.2xlarge', 'c3.4xlarge', 'c3.8xlarge', 'g2.2xlarge', 'hs1.8xlarge', 'm2.xlarge', 'm2.2xlarge', 'm2.4xlarge', 'cr1.8xlarge', 'm3.xlarge', 'm3.2xlarge', 'hi1.4xlarge', 'cc1.4xlarge', 'cc2.8xlarge', 'cg1.4xlarge', 'i2.xlarge', 'i2.2xlarge', 'i2.4xlarge', 'i2.8xlarge']
         #     default is 'm1.small'
         #   * 'KernelId'<~String> - Id of kernel with which to launch
         #   * 'KeyName'<~String> - Name of a keypair to add to booting instances
@@ -139,11 +139,31 @@ module Fog
 
           min_count.times do |i|
             instance_id = Fog::AWS::Mock.instance_id
+            availability_zone = options['Placement.AvailabilityZone'] || Fog::AWS::Mock.availability_zone(@region)
+
+            block_device_mapping = (options['BlockDeviceMapping'] || []).inject([]) do |mapping, device|
+              device_name           = device.fetch("DeviceName", "/dev/sda1")
+              volume_size           = device.fetch("Ebs.VolumeSize", 15)            # @todo should pull this from the image
+              delete_on_termination = device.fetch("Ebs.DeleteOnTermination", true) # @todo should pull this from the image
+
+              volume_id = create_volume(availability_zone, volume_size).data[:body]["volumeId"]
+
+              self.data[:volumes][volume_id].merge!("DeleteOnTermination" => delete_on_termination)
+
+              mapping << {
+                "deviceName"          => device_name,
+                "volumeId"            => volume_id,
+                "status"              => "attached",
+                "attachTime"          => Time.now,
+                "deleteOnTermination" => delete_on_termination,
+              }
+            end
+
             instance = {
               'amiLaunchIndex'      => i,
               'associatePublicIP'   => options['associatePublicIP'] || false,
               'architecture'        => 'i386',
-              'blockDeviceMapping'  => [],
+              'blockDeviceMapping'  => block_device_mapping,
               'clientToken'         => options['clientToken'],
               'dnsName'             => nil,
               'ebsOptimized'        => options['EbsOptimized'] || false,
@@ -156,7 +176,7 @@ module Fog
               'keyName'             => options['KeyName'],
               'launchTime'          => Time.now,
               'monitoring'          => { 'state' => options['Monitoring.Enabled'] || false },
-              'placement'           => { 'availabilityZone' => options['Placement.AvailabilityZone'] || Fog::AWS::Mock.availability_zone(@region), 'groupName' => nil, 'tenancy' => options['Placement.Tenancy'] || 'default' },
+              'placement'           => { 'availabilityZone' => availability_zone, 'groupName' => nil, 'tenancy' => options['Placement.Tenancy'] || 'default' },
               'privateDnsName'      => nil,
               'productCodes'        => [],
               'reason'              => nil,
